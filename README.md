@@ -174,7 +174,7 @@ It does the following:
 Then, once, by hand:
 
 1. Install Tailscale on your Mac and phone, and sign in with the same account.
-2. In the [Tailscale admin console](https://login.tailscale.com/admin/machines), disable key expiry for the Pi.
+2. In the [Tailscale admin console](https://login.tailscale.com/admin/machines), disable key expiry for the Pi. By default, a device's key expires after 180 days and the device disconnects until someone signs it in again. The Pi has no screen and you'll mostly reach it through Tailscale, so an expiry while you're away would lock you out until you're home. Keep expiry on for your Mac and phone, which are more likely to be lost. If the Pi is ever compromised, remove it in the admin console.
 3. In the HA Companion app, set the External URL to the address the script prints.
 
 **If you re-run `harden.sh` later, add `--vpn-iface tailscale0`.** Without it, `harden.sh` removes the Docker firewall exception.
