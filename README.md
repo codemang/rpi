@@ -167,7 +167,7 @@ On the first run it prints a login URL. Open it and sign in, and the script cont
 
 It does the following:
 
-- Installs Tailscale from Tailscale's apt repo, so it's updated along with everything else.
+- Installs Tailscale from Tailscale's apt repo, so `sudo apt update && sudo apt upgrade` keeps it current. Automatic updates from `harden.sh` only cover Debian security updates, so Tailscale isn't updated unattended.
 - Turns off Tailscale SSH and Tailscale DNS. SSH keeps going through the hardened `sshd` and `fail2ban`.
 - Allows SSH (22) and HA (8123) in on `tailscale0` only, and lets `tailscale0` through the Docker firewall.
 
@@ -178,6 +178,59 @@ Then, once, by hand:
 3. In the HA Companion app, set the External URL to the address the script prints.
 
 **If you re-run `harden.sh` later, add `--vpn-iface tailscale0`.** Without it, `harden.sh` removes the Docker firewall exception.
+
+## Claude Code from your phone with Moshi
+
+[Moshi](https://apps.apple.com/us/app/6757859949) is an iOS terminal app built for running coding agents over SSH or mosh. Using it with Tailscale and tmux gives you the full Claude Code terminal on your phone, and sessions survive network changes and the phone sleeping.
+
+### 1. Turn on mosh on the Pi
+
+```bash
+sudo bash setup-tailscale.sh --mosh
+```
+
+This installs `mosh-server` and allows mosh's UDP ports (60000–61000) in on `tailscale0` only. It's safe to run even if Tailscale is already set up.
+
+### 2. Give the phone its own SSH key
+
+Create a new key in Moshi rather than copying `~/.ssh/id_rpi` to the phone. If the phone is lost, you then remove just its key and the Mac keeps working.
+
+1. In Moshi, generate an Ed25519 key and copy its public key.
+2. On your Mac, add it to the Pi with a comment that names the device:
+
+   ```bash
+   ssh -i ~/.ssh/id_rpi codemang@PI 'cat >> ~/.ssh/authorized_keys'
+   # paste the public key, add " moshi-iphone" to the end of the line, then press Enter and Ctrl-D
+   ```
+
+To revoke it later, run `sed -i '/ moshi-iphone$/d' ~/.ssh/authorized_keys` on the Pi.
+
+### 3. Add the Pi in Moshi
+
+| Setting | Value |
+|---|---|
+| Host | The Pi's Tailscale name, such as `rpi.tail1234.ts.net` |
+| User | `codemang` |
+| Key | The key from step 2 |
+| Mosh | On |
+
+Tailscale must be connected on the phone. If the short name `rpi` doesn't resolve, use the full `.ts.net` name.
+
+### 4. Attach to the shared tmux session
+
+After connecting, run:
+
+```bash
+tmux new -A -s claude
+```
+
+From the Mac, `ssh -t -i ~/.ssh/id_rpi codemang@PI tmux new -A -s claude` opens the same session, so you can start Claude Code at your desk and carry on from your phone. Claude Code keeps running when you disconnect.
+
+### Notes
+
+- **Push notifications:** Moshi can notify you when Claude Code needs approval, through a separate helper called `moshi-hook` that runs on the Pi. It runs inside your Claude Code hooks as `codemang`, who is effectively root because of the `docker` group, so read its code before installing it.
+- **Failed logins:** `fail2ban` also watches SSH over Tailscale. A misconfigured key can get the phone's Tailscale address banned for a while. Clear it from the LAN with `sudo fail2ban-client unban <ip>`.
+- **Remote Control is an alternative.** Claude Code's [Remote Control](https://code.claude.com/docs/en/remote-control) shows sessions in the Claude app instead of a terminal and doesn't need Tailscale, but it has no shell access, and transcripts are stored on Anthropic's servers. You can use both.
 
 ## Testing
 

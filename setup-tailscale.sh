@@ -7,8 +7,9 @@
 # what differs. Run it with --dry-run to see what it would do.
 #
 # What it does:
-#   - Adds Tailscale's apt repo and installs tailscale, so it gets updated with
-#     the rest of the system (including by unattended-upgrades' normal runs)
+#   - Adds Tailscale's apt repo and installs tailscale, so `apt upgrade`
+#     updates it. harden.sh's automatic updates only cover Debian security
+#     updates, so it isn't updated unattended.
 #   - Logs the Pi into your tailnet, or updates its settings if already logged in
 #   - Allows SSH (22) and HA (8123) in on tailscale0, matching harden.sh's
 #     --vpn-iface rules, and lets tailscale0 through harden.sh's Docker block
